@@ -1,6 +1,6 @@
 # Project Tracker - Final Year Project Management System
 
-A comprehensive Flask-based web application designed to help students manage their final year projects efficiently.
+A comprehensive Flask-based web application designed to help students  manage their  projects efficiently.
 
 ## Features
 
