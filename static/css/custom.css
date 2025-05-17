@@ -1,0 +1,157 @@
+/* Custom styles to complement Bootstrap theme */
+
+/* Card hover effect */
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* Smooth transitions */
+.card, .btn {
+    transition: all 0.3s ease;
+}
+
+/* Hero section */
+.hero-section {
+    padding: 5rem 0;
+    background: linear-gradient(145deg, var(--bs-dark) 0%, var(--bs-primary) 100%);
+    margin-bottom: 2rem;
+}
+
+/* Task priority indicators */
+.priority-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.priority-high {
+    background-color: var(--bs-danger);
+}
+
+.priority-medium {
+    background-color: var(--bs-warning);
+}
+
+.priority-low {
+    background-color: var(--bs-info);
+}
+
+/* Project status badges */
+.status-badge {
+    font-size: 0.8rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Notes section */
+.notes-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.note-card {
+    border-left: 4px solid var(--bs-primary);
+}
+
+/* Task list item hover */
+.task-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Project card footer */
+.project-footer {
+    font-size: 0.9rem;
+}
+
+/* Timeline styling */
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+    list-style: none;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background-color: var(--bs-primary);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+}
+
+/* Progress bar animation */
+.progress-bar {
+    transition: width 1s ease-in-out;
+}
+
+/* Toast container */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-primary-darker);
+}
+
+/* Deadline warnings */
+.deadline-warning {
+    color: var(--bs-warning);
+    font-weight: bold;
+}
+
+.deadline-danger {
+    color: var(--bs-danger);
+    font-weight: bold;
+}
+
+/* Page transitions */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Form focus effects */
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}

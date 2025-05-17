@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Projects - Project Tracker{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0">Your Projects</h1>
+        <a href="{{ url_for('create_project') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> New Project
+        </a>
+    </div>
+
+    <!-- Filter and Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="projectSearch" class="form-control" placeholder="Search projects...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Planning">Planning</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Review">Review</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="sortProjects" class="form-select">
+                        <option value="deadline-asc">Deadline (Earliest First)</option>
+                        <option value="deadline-desc">Deadline (Latest First)</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="created-desc">Recently Created</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects List -->
+    {% if projects %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="projectsContainer">
+        {% for project in projects %}
+        <div class="col project-item" data-status="{{ project.status }}" data-title="{{ project.title }}">
+            <div class="card h-100 card-hover">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-{{ project.status|replace(' ', '-')|lower }}">{{ project.status }}</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-link text-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('project_detail', project_id=project.id) }}">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('edit_project', project_id=project.id) }}">
+                                    <i class="fas fa-edit me-2"></i>Edit Project
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ url_for('delete_project', project_id=project.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item text-danger delete-confirm">
+                                        <i class="fas fa-trash-alt me-2"></i>Delete Project
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{{ url_for('project_detail', project_id=project.id) }}" class="text-decoration-none">
+                            {{ project.title }}
+                        </a>
+                    </h5>
+                    <p class="card-text text-truncate">{{ project.description }}</p>
+                    
+                    {% set total_tasks = project.tasks.count() %}
+                    {% if total_tasks > 0 %}
+                        {% set completed_tasks = project.tasks.filter_by(status='Done').count() %}
+                        {% set completion_percentage = (completed_tasks / total_tasks * 100)|int %}
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                style="width: {{ completion_percentage }}%;" 
+                                aria-valuenow="{{ completion_percentage }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ completed_tasks }} of {{ total_tasks }} tasks completed ({{ completion_percentage }}%)</small>
+                    {% else %}
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted">No tasks added yet</small>
+                    {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-muted deadline-text" data-deadline="{{ project.deadline }}">
+                        <i class="far fa-calendar-alt me-1"></i>Due: {{ project.deadline.strftime('%b %d, %Y') }}
+                    </small>
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-chevron-right me-1"></i>View
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-folder-open fa-4x mb-3 text-muted"></i>
+            <h4>No Projects Found</h4>
+            <p class="text-muted">You haven't created any projects yet.</p>
+            <a href="{{ url_for('create_project') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-1"></i> Create Your First Project
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Project search functionality
+    const projectSearch = document.getElementById('projectSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const sortProjects = document.getElementById('sortProjects');
+    const projectsContainer = document.getElementById('projectsContainer');
+    const projectItems = document.querySelectorAll('.project-item');
+    
+    function filterProjects() {
+        const searchTerm = projectSearch.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        
+        projectItems.forEach(item => {
+            const title = item.getAttribute('data-title').toLowerCase();
+            const status = item.getAttribute('data-status');
+            
+            const matchesSearch = title.includes(searchTerm);
+            const matchesStatus = statusValue === '' || status === statusValue;
+            
+            if (matchesSearch && matchesStatus) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    function sortProjectItems() {
+        const sortValue = sortProjects.value;
+        const itemsArray = Array.from(projectItems);
+        
+        itemsArray.sort((a, b) => {
+            if (sortValue === 'name-asc') {
+                return a.getAttribute('data-title').localeCompare(b.getAttribute('data-title'));
+            } else if (sortValue === 'name-desc') {
+                return b.getAttribute('data-title').localeCompare(a.getAttribute('data-title'));
+            }
+            // Other sorting options would require additional data attributes
+            return 0;
+        });
+        
+        // Re-append items in sorted order
+        itemsArray.forEach(item => {
+            projectsContainer.appendChild(item);
+        });
+    }
+    
+    if (projectSearch) {
+        projectSearch.addEventListener('input', filterProjects);
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterProjects);
+    }
+    
+    if (sortProjects) {
+        sortProjects.addEventListener('change', sortProjectItems);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

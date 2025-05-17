@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Project Tracker - Home{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    {% if current_user.is_authenticated %}
+    <!-- Dashboard for logged in users -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark">
+                <div class="card-body">
+                    <h2 class="card-title">Welcome back, {{ current_user.first_name if current_user.first_name else current_user.username }}!</h2>
+                    <p class="card-text">Stay organized with your final year projects and tasks. Keep track of deadlines and make progress every day.</p>
+                    <a href="{{ url_for('create_project') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> New Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Ongoing Projects -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Ongoing Projects</h5>
+                    <a href="{{ url_for('projects') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if ongoing_projects %}
+                    <div class="list-group list-group-flush">
+                        {% for project in ongoing_projects %}
+                        <a href="{{ url_for('project_detail', project_id=project.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ project.title }}</h6>
+                                <small class="text-muted">
+                                    <span class="badge bg-{{ project.status|lower }}">{{ project.status }}</span>
+                                    <span class="ms-2 deadline-text" data-deadline="{{ project.deadline }}">
+                                        <i class="far fa-calendar-alt me-1"></i>
+                                        {{ project.deadline.strftime('%b %d, %Y') }}
+                                    </span>
+                                </small>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted">No ongoing projects. Create one to get started!</p>
+                        <a href="{{ url_for('create_project') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i> Create Project
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Tasks -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Upcoming Tasks</h5>
+                    <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_tasks %}
+                    <div class="list-group list-group-flush">
+                        {% for task in upcoming_tasks %}
+                        <div class="list-group-item task-list-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ task.title }}</h6>
+                                    <small class="text-muted">
+                                        <span class="badge bg-{{ task.priority|lower }}">{{ task.priority }}</span>
+                                        <span class="badge bg-{{ task.status|lower }}">{{ task.status }}</span>
+                                        <span class="ms-2 deadline-text" data-deadline="{{ task.deadline }}">
+                                            <i class="far fa-calendar-alt me-1"></i>
+                                            {{ task.deadline.strftime('%b %d, %Y') }}
+                                        </span>
+                                    </small>
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('project_detail', project_id=task.project_id) }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       data-bs-toggle="tooltip" 
+                                       title="View Project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Edit Task">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                Project: <a href="{{ url_for('project_detail', project_id=task.project_id) }}">{{ task.project.title }}</a>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-check fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted">No upcoming tasks. All caught up!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="p-3 rounded bg-primary bg-opacity-25">
+                                <i class="fas fa-project-diagram fa-2x mb-2"></i>
+                                <h3>{{ ongoing_projects|length }}</h3>
+                                <p class="mb-0">Ongoing Projects</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="p-3 rounded bg-success bg-opacity-25">
+                                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                <h3>{{ upcoming_tasks|selectattr('status', 'equalto', 'Done')|list|length }}</h3>
+                                <p class="mb-0">Completed Tasks</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="p-3 rounded bg-warning bg-opacity-25">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                <h3>{{ upcoming_tasks|selectattr('priority', 'equalto', 'High')|list|length }}</h3>
+                                <p class="mb-0">High Priority</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="p-3 rounded bg-danger bg-opacity-25">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                {% set overdue = namespace(count=0) %}
+                                {% for task in upcoming_tasks %}
+                                    {% if task.deadline < now and task.status != 'Done' %}
+                                        {% set overdue.count = overdue.count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                <h3>{{ overdue.count }}</h3>
+                                <p class="mb-0">Overdue Tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Welcome page for guests -->
+    <div class="hero-section text-white text-center rounded">
+        <div class="container py-5">
+            <h1 class="display-4 fw-bold mb-4">Track Your Final Year Project</h1>
+            <p class="lead mb-4">Stay organized, meet deadlines, and collaborate effectively with our project tracking tool designed specifically for final year projects.</p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4 gap-3">Get Started</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="row mb-4 g-4">
+        <div class="col-md-4">
+            <div class="card card-hover h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-tasks fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Task Management</h4>
+                    <p class="card-text">Break down your project into manageable tasks, set priorities, and track progress easily.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-hover h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Deadline Tracking</h4>
+                    <p class="card-text">Set deadlines for your project milestones and receive reminders as due dates approach.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-hover h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Progress Monitoring</h4>
+                    <p class="card-text">Track your project's progress with visual indicators and detailed reports.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to action -->
+    <div class="card bg-dark mt-5">
+        <div class="card-body text-center py-5">
+            <h2 class="card-title mb-3">Ready to start tracking your final year project?</h2>
+            <p class="card-text mb-4">Join now and get your project organized in minutes.</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Sign Up Now</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

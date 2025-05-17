@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}All Tasks - Project Tracker{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0">All Tasks</h1>
+    </div>
+
+    <!-- Filter and Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="taskSearch" class="form-control" placeholder="Search tasks...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Review">Review</option>
+                        <option value="Done">Done</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="priorityFilter" class="form-select">
+                        <option value="">All Priorities</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="sortTasks" class="form-select">
+                        <option value="deadline-asc">Deadline (Earliest First)</option>
+                        <option value="deadline-desc">Deadline (Latest First)</option>
+                        <option value="priority-desc">Priority (Highest First)</option>
+                        <option value="priority-asc">Priority (Lowest First)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks List -->
+    {% if tasks %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr class="task-item" 
+                            data-title="{{ task.title }}" 
+                            data-status="{{ task.status }}" 
+                            data-priority="{{ task.priority }}">
+                            <td>
+                                <strong>{{ task.title }}</strong>
+                                {% if task.description %}
+                                <button class="btn btn-sm btn-link text-muted p-0 ms-1" 
+                                    data-bs-toggle="popover" 
+                                    data-bs-placement="right" 
+                                    data-bs-content="{{ task.description }}" 
+                                    data-bs-trigger="focus">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('project_detail', project_id=task.project_id) }}">
+                                    {{ task.project.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ task.status|replace(' ', '-')|lower }}">
+                                    {{ task.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ task.priority|lower }}">
+                                    {{ task.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="deadline-text" data-deadline="{{ task.deadline }}">
+                                    {{ task.deadline.strftime('%b %d, %Y') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('project_detail', project_id=task.project_id) }}" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="View Project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit Task">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ url_for('delete_task', task_id=task.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger delete-confirm" data-bs-toggle="tooltip" title="Delete Task">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-clipboard-list fa-4x mb-3 text-muted"></i>
+            <h4>No Tasks Found</h4>
+            <p class="text-muted">You haven't created any tasks yet.</p>
+            <a href="{{ url_for('projects') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-project-diagram me-1"></i> Go to Projects
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Task filtering functionality
+    const taskSearch = document.getElementById('taskSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const priorityFilter = document.getElementById('priorityFilter');
+    const sortTasks = document.getElementById('sortTasks');
+    const taskItems = document.querySelectorAll('.task-item');
+    
+    function filterTasks() {
+        const searchTerm = taskSearch.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const priorityValue = priorityFilter.value;
+        
+        taskItems.forEach(item => {
+            const title = item.getAttribute('data-title').toLowerCase();
+            const status = item.getAttribute('data-status');
+            const priority = item.getAttribute('data-priority');
+            
+            const matchesSearch = title.includes(searchTerm);
+            const matchesStatus = statusValue === '' || status === statusValue;
+            const matchesPriority = priorityValue === '' || priority === priorityValue;
+            
+            if (matchesSearch && matchesStatus && matchesPriority) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    if (taskSearch) {
+        taskSearch.addEventListener('input', filterTasks);
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterTasks);
+    }
+    
+    if (priorityFilter) {
+        priorityFilter.addEventListener('change', filterTasks);
+    }
+    
+    // Additional functionality for sorting would go here
+});
+</script>
+{% endblock %}
+{% endblock %}

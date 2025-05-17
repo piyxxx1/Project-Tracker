@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} - Project Tracker{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Project Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-md-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-2">{{ project.title }}</h1>
+                    <div class="mb-3">
+                        <span class="badge bg-{{ project.status|replace(' ', '-')|lower }}">{{ project.status }}</span>
+                        <span class="text-muted ms-2">
+                            <i class="far fa-calendar-alt me-1"></i>Due: 
+                            <span class="deadline-text" data-deadline="{{ project.deadline }}">
+                                {{ project.deadline.strftime('%B %d, %Y') }}
+                            </span>
+                        </span>
+                    </div>
+                    <p>{{ project.description }}</p>
+                </div>
+                <div class="d-flex gap-2 mt-3 mt-md-0">
+                    <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Edit Project
+                    </a>
+                    <form action="{{ url_for('delete_project', project_id=project.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger delete-confirm">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Tasks and Charts -->
+        <div class="col-md-8 order-md-1 order-2">
+            <!-- Tasks Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Tasks</h5>
+                    <a href="{{ url_for('create_task', project_id=project.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Task
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Deadline</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ task.title }}</strong>
+                                        {% if task.description %}
+                                        <button class="btn btn-sm btn-link text-muted p-0 ms-1" 
+                                            data-bs-toggle="popover" 
+                                            data-bs-placement="right" 
+                                            data-bs-content="{{ task.description }}" 
+                                            data-bs-trigger="focus">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ task.status|replace(' ', '-')|lower }}" id="task-{{ task.id }}-badge">
+                                            {{ task.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ task.priority|lower }}">{{ task.priority }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="deadline-text" data-deadline="{{ task.deadline }}">
+                                            {{ task.deadline.strftime('%b %d, %Y') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit Task">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ url_for('delete_task', task_id=task.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-outline-danger delete-confirm" data-bs-toggle="tooltip" title="Delete Task">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted">No tasks added to this project yet.</p>
+                        <a href="{{ url_for('create_task', project_id=project.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Add First Task
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Notes Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Notes</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add Note Form -->
+                    <form action="{{ url_for('add_note', project_id=project.id) }}" method="POST" class="mb-4">
+                        {{ note_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ note_form.content(rows="3", class="form-control", placeholder="Add a note about this project...") }}
+                        </div>
+                        <div class="text-end">
+                            {{ note_form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+
+                    <!-- Notes List -->
+                    <div class="notes-container">
+                        {% if notes %}
+                            {% for note in notes %}
+                            <div class="card note-card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">{{ note.created_at.strftime('%B %d, %Y, %I:%M %p') }}</small>
+                                        <form action="{{ url_for('delete_note', note_id=note.id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0 delete-confirm">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <p class="mt-2 mb-0">{{ note.content }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <p class="text-muted mb-0">No notes added yet. Add your first note above.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Stats -->
+        <div class="col-md-4 order-md-2 order-1 mb-4 mb-md-0">
+            <!-- Progress Chart -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Progress</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if total_tasks > 0 %}
+                    <div style="height: 200px;">
+                        <canvas id="projectProgressChart" 
+                                data-completed="{{ completed_tasks }}" 
+                                data-remaining="{{ total_tasks - completed_tasks }}">
+                        </canvas>
+                    </div>
+                    <div class="mt-3">
+                        <h4>{{ completion_percentage|round|int }}% Complete</h4>
+                        <p class="text-muted">{{ completed_tasks }} of {{ total_tasks }} tasks completed</p>
+                    </div>
+                    {% else %}
+                    <div class="py-4">
+                        <i class="fas fa-chart-pie fa-3x mb-3 text-muted"></i>
+                        <p class="text-muted">No tasks to track progress.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Project Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Project Info</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-calendar-plus me-2"></i>Created</span>
+                            <span>{{ project.created_at.strftime('%b %d, %Y') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-calendar-check me-2"></i>Last Updated</span>
+                            <span>{{ project.updated_at.strftime('%b %d, %Y') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-tasks me-2"></i>Tasks</span>
+                            <span>{{ total_tasks }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-clipboard-check me-2"></i>Completed Tasks</span>
+                            <span>{{ completed_tasks }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-sticky-note me-2"></i>Notes</span>
+                            <span>{{ notes|length }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('create_task', project_id=project.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Add Task
+                        </a>
+                        <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i> Edit Project
+                        </a>
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-file-export me-1"></i> Export Tasks
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
